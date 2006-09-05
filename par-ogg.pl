@@ -5,6 +5,8 @@ use strict;
 use POSIX qw(strftime tmpnam);
 use File::Path;
 use Mail::Sendmail;
+use LWP;
+use LWP::UserAgent;
 
 sub download_and_convert($$$$$$$);
 
@@ -24,6 +26,24 @@ my $min_length = $ARGV[$argc++];
 
 my $max_attempts = 5;
 my $retry_pause = 600;
+
+# If this is a RAM file, need to download that to discover the embedded stream.
+if ($stream =~ /^http:\/\//) {
+	print "Downloading '$stream'\n";
+	my $ua = LWP::UserAgent->new;
+	$ua->agent("par-ogg/0.1 ");
+
+	# Create a request
+	my $req = HTTP::Request->new(GET => $stream);
+	my $res = $ua->request($req);
+	 
+	if ($res->is_success) {
+		$stream= $res->content;
+	} 
+	else {
+		die "Could not download '$stream'";
+	}
+}
 
 # Crack the current time.
 my @time_now = gmtime;
