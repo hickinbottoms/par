@@ -340,6 +340,13 @@ other dependencies that must be installed for this script to work:
 
 =over 5
 
+=item mplayer
+
+This does the main work of downloading and dumping the radio stream. It must be
+configured with the appropriate codecs to allow the decoding of Real Audio
+streams. The Gentoo ebuilds media-video/mplayer and media-libs/win32codecs can
+be used to install this.
+
 =item Perl Audio Converter
 
 This can be obtained from L<http://sourceforge.net/projects/pacpl> - there is
@@ -367,6 +374,10 @@ installation package (the required Perl modules are listed at the end).
 =head1 AUTHOR
 
 Stuart Hickinbottom
+
+=head1 HOMEPAGE
+
+L<http://hickinbottom.demon.co.uk/development/personal-audio-recorder>
 
 =cut
 
