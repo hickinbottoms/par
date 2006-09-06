@@ -326,11 +326,13 @@ be as follows (note that this would be all on one line in the crontab):
  --artist "BBC Radio 4" 
  --title "The Archers Omnibus" 
  --minlength 73 
- --format ogg
+ --format ogg >/dev/null 2>&1
 
 This will download and transcode the programme at 5pm every Sunday evening.
 Remember that you can add and amend crontab entries with the
-C<crontab -e> command.
+C<crontab -e> command. Note the redirection at the end of the entry to
+prevent cron mailing you the verbose output of the script every time it
+runs.
 
 =head1 DEPENDENCIES
 

@@ -1,5 +1,5 @@
-TARGETS = par-ogg.pl par.pl
-TARGET_DIR = ~media/Radio
+TARGETS = par.pl
+TARGET_DIR = /usr/local/bin
 
 all:
 
