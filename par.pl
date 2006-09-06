@@ -29,8 +29,6 @@ use constant PACPL => 'pacpl';
 
 sub download_and_convert($$$$$$$$$$);
 
-print 'par: $Id$' . "\n";
-
 # We rely on the Perl Audio Converter for the heavy lifting, so ensure it's
 # present on the path.
 my $pacpl = which(PACPL);
@@ -53,7 +51,7 @@ my $retry_pause;
 my $bitrate;
 my $format;
 GetOptions("stream=s" => \$stream,
-		"dirbase=s" => \$basedir,
+		"outputdir=s" => \$basedir,
 		"artist=s" => \$artist,
 		"title=s" => \$basename,
 		"minlength=i" => \$min_length,
@@ -61,11 +59,13 @@ GetOptions("stream=s" => \$stream,
 		"retrypause=i" => \$retry_pause,
 		"bitrate=i" => \$bitrate,
 		"format=s" => \$format,
-		"help|?" => sub { pod2usage(-verbose => 3) })
+		"help|?" => sub { pod2usage(-verbose => 1) })
 	or die "Failed to understand command options";
 
 # Some options are mandatory.
-pod2usage(2) if not ($stream || $basedir || $artist || $basename || $min_length);
+die "par.pl: Mandatory options missing - try 'perldoc par.pl'" unless ($stream || $basedir || $artist || $basename || $min_length);
+
+print 'par: $Id$' . "\n";
 
 # Some options default.
 $max_attempts = $max_attempts || DEFAULT_ATTEMPTS;
@@ -114,7 +114,7 @@ my $year = strftime "%G", @time_now;
 	or die "par: can't make output directory $basedir";
 
 # Filenames
-my $wav_filename = tmpnam();
+my $wav_filename = tmpnam() . '.wav';
 my $output_filename = "$basedir/$date $basename.$format";
 
 # File tags
@@ -168,14 +168,13 @@ sub download_and_convert($$$$$$$$$$)
 	my $converted_ok = 1;
 
 	# OK, now do the mplayer dump to the intermediate wav.
-#	system("/usr/bin/mplayer -vo null -ao pcm:file=\"$wav_filename\" \"$stream\"");
+	system("/usr/bin/mplayer -vo null -ao pcm:file=\"$wav_filename\" \"$stream\"");
 
-#	my $length = length_minutes($wav_filename);
-#	if ($length < $min_length) {
-#		print "par: short output file - $length minutes, min length $min_length minutes\n";
-#		$converted_ok = 0;
-#	}
-$wav_filename = "/home/stuarth/code/audiothings/par/test2.wav";
+	my $length = length_minutes($wav_filename);
+	if ($length < $min_length) {
+		print "par: short output file - $length minutes, min length $min_length minutes\n";
+		$converted_ok = 0;
+	}
 
 	# If that worked, we're going to use pacpl to get to our destination
 	# format and apply the required tags.
@@ -191,7 +190,7 @@ $wav_filename = "/home/stuarth/code/audiothings/par/test2.wav";
 		system($cmd);
 	}
 
-#	unlink $wav_filename;
+	unlink $wav_filename;
 
 	return ( $converted_ok, $length );
 }
@@ -204,42 +203,155 @@ sub length_minutes($) {
 	return int($read->length_seconds() / 60);
 }
 
+__END__
 
 # The help text
-__END__
 
 =head1 NAME
 
-FLACulance.pl [options]
+par.pl [options]
 
 =head1 SYNOPSIS
 
-Script to find all FLAC files, then compute and store album and track
-"Replay Gain" (http://en.wikipedia.org/wiki/Replay_Gain) tags for each album.
+Script to download streams in Real Audio format and transcode them to
+a format of the users' choice. The output audio file is also appropriately
+tagged.
+
+The main use of this script (and its original purpose) was to implement a
+"poor man's personal audio recorded" by coupling this script to cron. In
+particular, this is very useful for the BBC's "listen again" content since
+that allows you to record each programme as they come out (if you schedule
+your cron job correctly).
+
+Each recorded programme is given a filename that includes the date of the
+recorded programme, hence if you use this correctly you'll end up with 
+folder that contains all the recorded episodes of the programme you were
+interested in.
 
 =head1 OPTIONS
 
 =over 15
 
+=item --stream
+
+The URL of the Real Audio stream to record. This can end in either F<.ra>
+or F<.ram> - both will be correctly handled.
+
+=item --outputdir
+
+The directory used for the output files - this script will place each
+recorded programme into this folder with a filename that includes the
+date that the recording was made.
+
+=item --format
+
+The required output format. This can be any format that is recognised as
+a 'convertto' type by the Perl Audio Converter script (pacpl), but the most
+common types to use here would be "ogg" or "mp3".
+
+This parameter is optional; if it is not present then MP3 format is the
+default.
+
+=item --artist
+
+The artist name to tag the output file with. For radio stations, this is
+often going to be the station name the programme has been recorded from
+(eg "BBC Radio 4").
+
+=item --title
+
+The title that will be written into the track tag of the recording (with
+the date of the recording as a prefix). For radio stations, this is often
+going to be the name of the programme itself (eg "The Archers Omnibus").
+
+=item --minlength
+
+Specifies the minimum length, in minutes, that the programme is expected to
+be. This is useful since a remote steam can be prematurely closed and would
+otherwise result in a part-recorded programme. If the recording is less
+than this number of minutes then the script will try to download the
+programme again, up until the number of tries in the next option.
+
+=item --maxtries
+
+This specifies the maximum number of tries that will be used to download the
+programme. This value is optional; if not specified then the maximum
+number of tries will be 5.
+
+=item --retrypause
+
+If the download has to be retried, this value specifies the amount of time,
+in seconds, that the script will pause before retrying the download. This
+value is optional; if not specified then the pause will be 300s (five
+minutes).
+
+=item --bitrate
+
+Specifies the required bitrate (in kbps) of the resulting file. This value
+is optional and if not supplied the default of 128kbps will be used instead.
+
 =item --help
 
-Show this help description
-
-=item --verbose
-
-Output far more progress messages during processing - useful when trying to
-track down problems
-
-=item --directory
-
-Override default location of input directory. If no directory is specified then
-a default music directory will be used instead
+Displays usage information for the script.
 
 =back
 
 =head1 EXAMPLE
 
-FLACulance.pl --verbose --directory="c:\my music"
+A simple example is probably all you'll need to actually use this script
+effectively. The following command will download a programme that is published
+weekly and transcode it to Ogg format:
+
+ par.pl \
+  --stream "rtsp://rmv8.bbc.net.uk/radio4/archers/archers_omnibus.ra" \
+  --outputdir "/mnt/media/Radio/archers" \
+  --artist "BBC Radio 4" \
+  --title "The Archers Omnibus" \
+  --minlength 73 \
+  --format ogg
+
+Over time (eg if this command were scheduled weekly with cron), this will
+populate the folder F</mnt/media/Radio/archers> as follows:
+
+ 2006-08-27 The Archers Omnibus.ogg
+ 2006-09-03 The Archers Omnibus.ogg
+ 2006-09-10 The Archers Omnibus.ogg
+
+=head1 DEPENDENCIES
+
+As well as the main dependencies of this script (which should be detected and
+a meaningful error produced if they are not present), there are a number of
+other dependencies that must be installed for this script to work:
+
+=over 5
+
+=item Perl Audio Converter
+
+This can be obtained from L<http://sourceforge.net/projects/pacpl> - there is
+no Gentoo ebuild available. Follow the installation instructions with the
+package (note, though, that only a "base" installation is necessary for
+this script's purposes).
+
+=item Ogg::Vorbis::Header
+
+Only necessary if you intend to produce Ogg files with "--format ogg".
+Gentoo ebuild dev-perl/ogg-vorbis-header can be used to install this.
+
+=item MP3::Tag
+
+Only necessary if you intend to produce MP3 files with "--format mp3" (or
+leave the default format, which is MP3). Gentoo ebuild dev-perl/MP3-Tag can
+be used to install this.
+
+=back
+
+Plus, any other dependencies of the Perl Audio Converter for your chosen
+output format - determine those by running "pacpl-install -c" in the
+installation package (the required Perl modules are listed at the end).
+
+=head1 AUTHOR
+
+Stuart Hickinbottom
 
 =cut
 
