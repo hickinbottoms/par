@@ -317,6 +317,21 @@ populate the folder F</mnt/media/Radio/archers> as follows:
  2006-09-03 The Archers Omnibus.ogg
  2006-09-10 The Archers Omnibus.ogg
 
+An example cron entry that scheduled this command to be run weekly would
+be as follows (note that this would be all on one line in the crontab):
+
+ 0 17 * * sun par.pl 
+ --stream "rtsp://rmv8.bbc.net.uk/radio4/archers/archers_omnibus.ra" 
+ --outputdir "/mnt/media/Radio/archers" 
+ --artist "BBC Radio 4" 
+ --title "The Archers Omnibus" 
+ --minlength 73 
+ --format ogg
+
+This will download and transcode the programme at 5pm every Sunday evening.
+Remember that you can add and amend crontab entries with the
+C<crontab -e> command.
+
 =head1 DEPENDENCIES
 
 As well as the main dependencies of this script (which should be detected and
