@@ -26,8 +26,9 @@ use constant DEFAULT_RETRY => 300;
 use constant DEFAULT_FORMAT => 'mp3';
 use constant DEFAULT_BITRATE => 128;
 use constant PACPL => 'pacpl';
+use constant MPLAYER => 'mplayer';
 
-sub download_and_convert($$$$$$$$$$);
+sub download_and_convert($$$$$$$$$$$);
 
 # We rely on the Perl Audio Converter for the heavy lifting, so ensure it's
 # present on the path.
@@ -36,7 +37,18 @@ if (not defined($pacpl)) {
 	printf STDERR "par: The Perl Audio Converter is required to support this script\n";
 	printf STDERR "par: Download it from http://sourceforge.net/projects/pacpl/\n";
 	printf STDERR "par: It doesn't require compilation, but use the following command to install\n";
-	printf STDERR "par:     sudo ./pacpl-install --install base\n";
+	printf STDERR "par:     ./pacpl-install --install base\n";
+	exit 1;
+}
+
+# We rely on mplayer to do the stream downloading and dumping, so ensure it's
+# present on the path.
+my $mplayer = which(MPLAYER);
+if (not defined($mplayer)) {
+	printf STDERR "par: mplayer (and appropriate Real Audio codecs) is required to support\n";
+	printf STDERR "par: this script.\n";
+	printf STDERR "par: Gentoo users can get them with the following command:\n";
+	printf STDERR "par:     emerge media-video/mplayer media-video/mplayer\n";
 	exit 1;
 }
 
@@ -83,6 +95,7 @@ print "par: title: $basename\n";
 print "par: minlength: $min_length\n";
 print "par: maxtries: $max_attempts\n";
 print "par: retrypause: $retry_pause\n";
+print "par: mplayer: $mplayer\n";
 print "par: pacpl: $pacpl\n";
 
 # If this is a RAM file, need to download that to discover the embedded stream.
@@ -129,7 +142,7 @@ my $converted_ok = 0;
 my $length = 0;
 for (my $attempt = 1; ($attempt <= $max_attempts) && !$converted_ok; $attempt++) {
 	print "par: download attempt $attempt of $max_attempts\n";
-	($converted_ok, $length) = download_and_convert($pacpl, $wav_filename, $output_filename, $stream, $bitrate,
+	($converted_ok, $length) = download_and_convert($mplayer, $pacpl, $wav_filename, $output_filename, $stream, $bitrate,
 		$artist, $album, $title, $year, $min_length);
 
 	if (!$converted_ok && ($attempt != $max_attempts)) {
@@ -160,15 +173,15 @@ print "par: all done\n";
 
 exit 0;
 	
-sub download_and_convert($$$$$$$$$$)
+sub download_and_convert($$$$$$$$$$$)
 {
-	my ($pacpl, $wav_filename, $output_filename, $stream, $bitrate,
+	my ($mplayer, $pacpl, $wav_filename, $output_filename, $stream, $bitrate,
 		$artist, $album, $title, $year, $min_length) = @_;
 
 	my $converted_ok = 1;
 
 	# OK, now do the mplayer dump to the intermediate wav.
-	system("/usr/bin/mplayer -vo null -ao pcm:file=\"$wav_filename\" \"$stream\"");
+	system("$mplayer -vo null -ao pcm:file=\"$wav_filename\" \"$stream\"");
 
 	my $length = length_minutes($wav_filename);
 	if ($length < $min_length) {
@@ -179,13 +192,13 @@ sub download_and_convert($$$$$$$$$$)
 	# If that worked, we're going to use pacpl to get to our destination
 	# format and apply the required tags.
 	if ($converted_ok) {
-		my $cmd = "pacpl --convertto $format --overwrite --outfile \"$output_filename\" --file \"$wav_filename\"";
+		my $cmd = "$pacpl --convertto $format --overwrite --outfile \"$output_filename\" --file \"$wav_filename\"";
 		print "par: $cmd\n";
 		system($cmd);
 		if (! -f "$output_filename") {
 			die "par: Perl Audio Converter failed to convert WAV file";
 		}
-		$cmd = "pacpl --tag genre=Speech --tag artist=\"$artist\" --tag title=\"$title\" --tag album=\"$album\" --tag year=\"$year\" \"$output_filename\"";
+		$cmd = "$pacpl --tag genre=Speech --tag artist=\"$artist\" --tag title=\"$title\" --tag album=\"$album\" --tag year=\"$year\" \"$output_filename\"";
 		print "par: $cmd\n";
 		system($cmd);
 	}
