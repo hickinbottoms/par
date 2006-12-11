@@ -181,7 +181,7 @@ sub download_and_convert($$$$$$$$$$$)
 	my $converted_ok = 1;
 
 	# OK, now do the mplayer dump to the intermediate wav.
-	system("$mplayer -vo null -ao pcm:file=\"$wav_filename\" \"$stream\"");
+	system("$mplayer -vo null -ao pcm:file=\"$wav_filename\" \"$stream\" 2>/dev/null");
 
 	my $length = length_minutes($wav_filename);
 	if ($length < $min_length) {
