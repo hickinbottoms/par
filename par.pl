@@ -371,8 +371,8 @@ this script's purposes).
 
 =item Ogg::Vorbis::Header
 
-Only necessary if you intend to produce Ogg files with "--format ogg".
-Gentoo ebuild dev-perl/ogg-vorbis-header can be used to install this.
+This is required by the Perl Audio Converter and must be installed. Gentoo
+ebuild dev-perl/ogg-vorbis-header can be used to install this.
 
 =item MP3::Tag
 
