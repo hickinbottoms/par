@@ -198,7 +198,7 @@ sub download_and_convert($$$$$$$$$$$)
 		if (! -f "$output_filename") {
 			die "par: Perl Audio Converter failed to convert WAV file";
 		}
-		$cmd = "$pacpl --tag genre=Speech --tag artist=\"$artist\" --tag title=\"$title\" --tag album=\"$album\" --tag year=\"$year\" \"$output_filename\"";
+		$cmd = "$pacpl --genre=Speech --artist=\"$artist\" --title=\"$title\" --album=\"$album\" --year=\"$year\" \"$output_filename\"";
 		print "par: $cmd\n";
 		system($cmd);
 	}

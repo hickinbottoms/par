@@ -1,6 +1,6 @@
 TARGETS = par.pl parcheck.pl
 TARGET_DIR = /usr/local/bin
-TARGET_DIR2 = /var/www/localhost/htdocs/wp-content/audio-processing
+TARGET_DIR2 = /var/www/www.hickinbottom.com/htdocs/files
 
 all:
 
