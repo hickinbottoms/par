@@ -28,7 +28,7 @@ use constant DEFAULT_BITRATE => 128;
 use constant PACPL => 'pacpl';
 use constant MPLAYER => 'mplayer';
 
-sub download_and_convert($$$$$$$$$$$);
+sub download_and_convert($$$$$$$$$$$$);
 
 # We rely on the Perl Audio Converter for the heavy lifting, so ensure it's
 # present on the path.
@@ -128,13 +128,14 @@ my $year = strftime "%G", @time_now;
 
 # Filenames
 my $wav_filename = tmpnam() . '.wav';
-my $output_filename = "$basedir/$date $basename.$format";
+my $output_filename = "$date $basename.$format";
+my $output_dir = "$basedir";
 
 # File tags
 my $album = "$basename";
 my $title = "$date $basename";
 
-print "par: recording to $output_filename\n";
+print "par: recording to $output_dir/$output_filename\n";
 
 # Try a few times to download and convert - sometimes the download is
 # truncated early.
@@ -142,7 +143,7 @@ my $converted_ok = 0;
 my $length = 0;
 for (my $attempt = 1; ($attempt <= $max_attempts) && !$converted_ok; $attempt++) {
 	print "par: download attempt $attempt of $max_attempts\n";
-	($converted_ok, $length) = download_and_convert($mplayer, $pacpl, $wav_filename, $output_filename, $stream, $bitrate,
+	($converted_ok, $length) = download_and_convert($mplayer, $pacpl, $wav_filename, $output_filename, $output_dir, $stream, $bitrate,
 		$artist, $album, $title, $year, $min_length);
 
 	if (!$converted_ok && ($attempt != $max_attempts)) {
@@ -153,8 +154,8 @@ for (my $attempt = 1; ($attempt <= $max_attempts) && !$converted_ok; $attempt++)
 
 # If still not big enough after a few goes, make the problem known.
 if (!$converted_ok) {
-	my %mail = (To      => 'stuart@hickinbottom.demon.co.uk',
-				From    => 'par@hickinbottom.demon.co.uk',
+	my %mail = (To      => 'stuart@hickinbottom.com',
+				From    => 'par@hickinbottom.com',
 				Message => "Size was $length mins, minimum length is $min_length mins (tried $max_attempts times)",
 				Subject => "ERROR: Recording of '$output_filename' cancelled because download was too short"
 				);
@@ -173,10 +174,10 @@ print "par: all done\n";
 
 exit 0;
 	
-sub download_and_convert($$$$$$$$$$$)
+sub download_and_convert($$$$$$$$$$$$)
 {
-	my ($mplayer, $pacpl, $wav_filename, $output_filename, $stream, $bitrate,
-		$artist, $album, $title, $year, $min_length) = @_;
+	my ($mplayer, $pacpl, $wav_filename, $output_filename, $output_dir, $stream,
+		$bitrate, $artist, $album, $title, $year, $min_length) = @_;
 
 	my $converted_ok = 1;
 
@@ -192,7 +193,7 @@ sub download_and_convert($$$$$$$$$$$)
 	# If that worked, we're going to use pacpl to get to our destination
 	# format and apply the required tags.
 	if ($converted_ok) {
-		my $cmd = "$pacpl --convertto $format --overwrite --outfile \"$output_filename\" --file \"$wav_filename\"";
+		my $cmd = "$pacpl --to $format --overwrite --outfile \"$output_filename\" --outdir \"$output_dir\" \"$wav_filename\"";
 		print "par: $cmd\n";
 		system($cmd);
 		if (! -f "$output_filename") {
