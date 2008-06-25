@@ -128,7 +128,7 @@ my $year = strftime "%G", @time_now;
 
 # Filenames
 my $wav_filename = tmpnam() . '.wav';
-my $output_filename = "$date $basename.$format";
+my $output_filename = "$date $basename";
 my $output_dir = "$basedir";
 
 # File tags
@@ -174,8 +174,7 @@ print "par: all done\n";
 
 exit 0;
 	
-sub download_and_convert($$$$$$$$$$$$)
-{
+sub download_and_convert($$$$$$$$$$$$) {
 	my ($mplayer, $pacpl, $wav_filename, $output_filename, $output_dir, $stream,
 		$bitrate, $artist, $album, $title, $year, $min_length) = @_;
 
@@ -195,11 +194,12 @@ sub download_and_convert($$$$$$$$$$$$)
 	if ($converted_ok) {
 		my $cmd = "$pacpl --to $format --overwrite --outfile \"$output_filename\" --outdir \"$output_dir\" \"$wav_filename\"";
 		print "par: $cmd\n";
+		chdir($output_dir);
 		system($cmd);
-		if (! -f "$output_filename") {
+		if (! -f "$output_dir/$output_filename.$format") {
 			die "par: Perl Audio Converter failed to convert WAV file";
 		}
-		$cmd = "$pacpl --genre=Speech --artist=\"$artist\" --title=\"$title\" --album=\"$album\" --year=\"$year\" \"$output_filename\"";
+		$cmd = "$pacpl --genre=Speech --artist=\"$artist\" --title=\"$title\" --album=\"$album\" --year=\"$year\" \"$output_dir/$output_filename.$format\"";
 		print "par: $cmd\n";
 		system($cmd);
 	}
