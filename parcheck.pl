@@ -7,7 +7,7 @@
 # weekly (ie every seven days). With more advanced crontab parsing that
 # restriction could be removed.
 #
-# Copyright (c) Stuart Hickinbottom 2006
+# Copyright (c) Stuart Hickinbottom 2009
 
 use warnings;
 use strict;
@@ -18,7 +18,7 @@ use Mail::Sendmail;
 use constant MAXAGE => 7.0;
 use constant NOAGE => 10000;
 use constant MARKER => '.checkpar';
-use constant FROM => 'checkpar@hickinbottom.demon.co.uk';
+use constant FROM => 'checkpar@hickinbottom.com';
 use constant SMTP => 'post.demon.co.uk';
 
 my $verbose;
